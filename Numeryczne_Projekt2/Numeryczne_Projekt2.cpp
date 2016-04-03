@@ -15,6 +15,7 @@ class ruchw{
 public:
 	int wspolczynnik;
 	ruch *niewiadoma;
+	//int numer;
 
 	ruchw() {
 
@@ -23,6 +24,7 @@ public:
 	ruchw(int a, ruch *b) {
 		wspolczynnik = a;
 		niewiadoma = b;
+		//numer = niewiadoma->numer;
 	}
 };
 
@@ -33,6 +35,7 @@ public:
 	int gracz1Pozycja, gracz2Pozycja, gracz, wynik;
 	vector<ruchw> tab;
 	int pewne = 0;
+	int numer = 0;
 
 public:
 	ruch() {
@@ -66,7 +69,86 @@ public:
 
 };
 
+class Macierz {
+public:
+	double **macierz;
+	int rozmiar_macierzy;
 
+	Macierz(int rozmiar){
+		rozmiar_macierzy = rozmiar;
+		macierz = new double*[rozmiar];
+		for (int i = 0; i < rozmiar; i++)
+			macierz[i] = new double[rozmiar + 1]; //+1 na macierz wyrazów wolnych
+
+		for (int j = 0; j < rozmiar; j++) {
+			for (int k = 0; k <= rozmiar; k++){
+				macierz[j][k] = 0;
+			}
+		}
+	}
+
+	int znajdz_numer_kolumny(vector<ruch> wektor, ruch *szukany) {
+		ruch *findy = new ruch();
+		for (int is = 0; is < wektor.size(); is++) {
+			*findy = wektor[is];
+			if (findy->gracz != szukany->gracz || findy->gracz1Pozycja != szukany->gracz1Pozycja || findy->gracz2Pozycja != szukany->gracz2Pozycja)
+				continue;
+			else {
+				return is;
+				break;
+			}
+		}
+		return false;
+	}
+
+	void wypelnienie(vector<ruch> wektor) {
+		double a, b;
+		int c, d;
+		for (int i = 0; i < wektor.size(); i++) {
+			for (int j = 0; j < wektor[i].tab.size(); j++) {
+				//c = wektor[i].tab[j].niewiadoma->numer;
+				c = znajdz_numer_kolumny(wektor, wektor[i].tab[j].niewiadoma);
+				d = wektor[i].tab[j].wspolczynnik;
+				this->macierz[i][c] =  (double)d / 6.0;
+
+			}
+			
+			this->macierz[i][i] = 1;
+			this->macierz[i][wektor.size() + 1] = (double)wektor[i].pewne / 6.0;
+		}
+		
+	}
+
+	void wypisz_macierz() {
+		for (int j = 0; j < rozmiar_macierzy; j++) {
+			cout << j << ": ";
+			for (int k = 0; k < rozmiar_macierzy+2; k++){
+				cout << macierz[j][k] << " ";
+			}
+			cout << endl;
+		}
+	}
+
+	void gauss() {
+
+		//eliminacja
+		double m;
+		for (int i = 0; i < this->rozmiar_macierzy; i++) { // ka¿da kolumna pokolei
+
+			for (int j = 1; j < this->rozmiar_macierzy; j++) {
+				if (macierz[0][i] != 0) { // zero
+					m = macierz[j][i] / macierz[0][i]; //wspo³czynnik mno¿enia pierwszego weirsza, by odj¹æ od kolejnych kolumn, by wyzerowaæ dolny trójk¹t
+					for (int k = 0; k < this->rozmiar_macierzy + 1; k++) { // zerowanie kolumny
+						macierz[j][k] = macierz[j][k] - m * macierz[0][k];
+					}
+				}
+			}
+		}
+	}
+
+};
+
+int ktorynumer = 0;
 
 vector<ruch> wektor;
 vector<ruch> wektor2;
@@ -135,6 +217,9 @@ int main()
 		analizowany = kolejka.front();
 		kolejka.pop();
 
+		analizowany.numer = ktorynumer; // numeruje zmienne
+		ktorynumer++;
+
 		ktorygracz = analizowany.gracz % 2 + 1; //modulo 2 + 1 daje przeciwnego gracza
 		mozliwapulapka = (ktorygracz == 2) ? analizowany.gracz1Pozycja : analizowany.gracz2Pozycja;
 
@@ -161,8 +246,9 @@ int main()
 			}
 
 		}
-
+		
 		wektor2.push_back(analizowany);
+		
 
 	}
 
@@ -170,18 +256,21 @@ int main()
 	for (int iter = 0; iter < wektor2.size(); iter++) {
 		cout << iter << ":" << wektor2[iter].gracz1Pozycja << wektor2[iter].gracz2Pozycja << wektor2[iter].gracz << " : ";
 		for (int iter2 = 0; iter2 < wektor2[iter].tab.size(); iter2++) {
-			cout << wektor2[iter].tab[iter2].wspolczynnik << " " << wektor2[iter].tab[iter2].niewiadoma->gracz1Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz2Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz << " " << wektor2[iter].pewne << " , ";
+			cout << wektor2[iter].tab[iter2].wspolczynnik << " " << wektor2[iter].tab[iter2].niewiadoma->gracz1Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz2Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz <<  " , ";
 		}
-		cout << endl;
-	}
-
-	for (int iter = 0; iter < wektor2.size(); iter++) {
-
+		
+		cout << " " << wektor2[iter].pewne << endl;
 	}
 
 
 
 
+
+	Macierz *m = new Macierz(wektor2.size());
+	m->wypelnienie(wektor2);
+	m->wypisz_macierz();
+	m->gauss();
+	m->wypisz_macierz();
 	return 0;
 }
 
