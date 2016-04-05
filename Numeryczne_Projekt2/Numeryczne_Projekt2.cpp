@@ -206,6 +206,48 @@ public:
 
 		cout  << wektor[0].wynik2 << endl;
 	}
+
+	void iteracyjne2(vector<ruch> wektor) {
+
+		int stop = 15;
+		bool koniec = true;
+		int n = wektor.size();
+		double eps = 0.000001;
+		vector<ruch> wektor2;
+		float *B2 = new float[n];
+
+		do
+		{
+			// przepisanie x - aktualnych wynikow do x2 - wynikow z poprzedniej iteracji
+		//	for (int i = 0; i < n; i++)
+				//x2[i] = x[i];
+				wektor2 = wektor;
+
+			// wykonanie kolejnej iteracji
+			for (int i = 0; i < n; i++)
+			{
+				B2[i] = macierz[i][rozmiar_macierzy];//wyraz wolny
+
+				for (int j = 0; j < i; j++)
+					B2[i] -= (macierz[i][j] * wektor[j].wynik2);
+
+				for (int j = i + 1; j < n; j++)
+					B2[i] -= macierz[i][j] * wektor2[j].wynik2;
+
+				wektor[i].wynik2 = B2[i] / macierz[i][i];
+			}
+
+			// sprawdzenie warunku zakonczenia: ||x(k)-x(k-1)|| <= epsilon
+			for (int i = 0; i < n; i++)
+			{
+				if (fabs(wektor[i].wynik2 -wektor2[i].wynik2) > eps) { koniec = true; break; }
+				else koniec = false;
+			}
+			stop--;
+		} while (koniec && stop > 0);
+
+		cout << wektor[0].wynik2 << endl;
+	}
 };
 
 class Plansza{
@@ -307,6 +349,91 @@ map<int, int> polapki = { { 4, -2 }, { 5, -2 } };
 
 queue<ruch> kolejka;
 
+
+class Zagadka {
+
+	bool znajdz(ruch *nowyruch) {
+		ruch *findy = new ruch();
+		//if (find(wektor.begin(), wektor.end(), *nowyruch) != wektor.end()) {
+		for (int is = 0; is < wektor.size(); is++) {
+			*findy = wektor[is];
+			if (findy->gracz != nowyruch->gracz || findy->gracz1Pozycja != nowyruch->gracz1Pozycja || findy->gracz2Pozycja != nowyruch->gracz2Pozycja)
+				continue;
+			else {
+				return true;
+				break;
+			}
+		}
+
+		return false;
+	}
+
+	void analiza() {
+		int ktorygracz, mozliwapulapka;
+
+		ruch *pierwszy = new ruch(0, 0, 1);
+		kolejka.push(*pierwszy);
+		wektor.push_back(*pierwszy);
+
+		ruch analizowany;
+		ruch *nowyruch;
+
+		while (!kolejka.empty())
+		{
+			analizowany = kolejka.front();
+			kolejka.pop();
+
+			analizowany.numer = ktorynumer; // numeruje zmienne
+			ktorynumer++;
+
+			ktorygracz = analizowany.gracz % 2 + 1; //modulo 2 + 1 daje przeciwnego gracza
+			mozliwapulapka = (ktorygracz == 2) ? analizowany.gracz1Pozycja : analizowany.gracz2Pozycja;
+
+			for (int i = 1; i <= 6; i++) {
+				if (analizowany.gracz1Pozycja + i *  ((int)ktorygracz / 2) < pola && analizowany.gracz2Pozycja + i *abs(ktorygracz - 2) < pola) {
+
+					if (polapki.find(mozliwapulapka + i) != polapki.end()) { //nie znlezioon 
+						nowyruch = new ruch(analizowany.gracz1Pozycja + (i + polapki[mozliwapulapka + i]) *((int)ktorygracz / 2), analizowany.gracz2Pozycja + (i + polapki[mozliwapulapka + i]) * abs(ktorygracz - 2), ktorygracz); //koment
+					}
+					else { // znaleziono 
+						nowyruch = new ruch(analizowany.gracz1Pozycja + i *  ((int)ktorygracz / 2), analizowany.gracz2Pozycja + i *abs(ktorygracz - 2), ktorygracz);
+					}
+
+					analizowany.wstaw(nowyruch);
+
+					if (znajdz(nowyruch) == false) {
+						wektor.push_back(*nowyruch);
+						kolejka.push(*nowyruch);
+					}
+
+				}
+				else { // dodaje pewne zwyciêstwo
+					if (analizowany.gracz == 1)
+						analizowany.pewne += 1;
+				}
+
+			}
+
+			wektor2.push_back(analizowany);
+
+
+		}
+	}
+
+
+	void wypisz_rownania() {
+		cout << "Iloœæ równañ: " << wektor2.size() << endl;
+		for (int iter = 0; iter < wektor2.size(); iter++) {
+			cout << iter << ":" << wektor2[iter].gracz1Pozycja << wektor2[iter].gracz2Pozycja << wektor2[iter].gracz << " : ";
+			for (int iter2 = 0; iter2 < wektor2[iter].tab.size(); iter2++) {
+				cout << wektor2[iter].tab[iter2].wspolczynnik << " " << wektor2[iter].tab[iter2].niewiadoma->gracz1Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz2Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz << " , ";
+			}
+			cout << " " << wektor2[iter].pewne << endl;
+		}
+	}
+};
+
+
 bool znajdz(ruch *nowyruch) {
 	ruch *findy = new ruch();	
 	//if (find(wektor.begin(), wektor.end(), *nowyruch) != wektor.end()) {
@@ -326,26 +453,6 @@ bool znajdz(ruch *nowyruch) {
 
 int main()
 {
-	/*
-	for (int i = 0; i < pola; i++) {
-		for (int j = 0; j < pola; j++) {
-
-			if (i != 4 && j != 4 && i != 5 && j!= 5) {
-				if ( (j != 0 && i != 0) || (i == 0 && j == 0)) {
-					ruch x = ruch(i, j, 1);
-					lista.push_back(x);
-				}
-				if (i != 0) {
-					ruch y = ruch(i, j, 2);
-					lista.push_back(y);
-				}
-			}
-
-		}
-	}
-	*/
-
-	cout << "Start ";
 
 	int ktorygracz, mozliwapulapka;
 
@@ -417,9 +524,9 @@ int main()
 //	m->wypisz_macierz();
 
 	m->wypelnienie(wektor2);
-	m->wypisz_macierz();
-	m->iteracyjne(wektor2);
-	m->wypisz_macierz();
+	//m->wypisz_macierz();
+	m->iteracyjne2(wektor2);
+	//m->wypisz_macierz();
 
 
 	//Plansza *plansza = new Plansza(pola, polapki);
@@ -430,13 +537,3 @@ int main()
 
 	return 0;
 }
-
-/*
-
-
-Platform.runLater(new Runnable() {
-@Override public void run() {
-mpb.getProgressBar().setProgress(mpb.getActualProgress()/mpb.getTotalProgress());
-}
-});
-*/
