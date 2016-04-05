@@ -122,42 +122,6 @@ public:
 		return false;
 	}
 
-	void wypelnienie() {
-		
-		int c, d;
-		for (int i = 0; i < wektor.size(); i++) {
-			for (int j = 0; j < wektor[i].tab.size(); j++) {
-				//c = wektor[i].tab[j].Niewiadoma->numer;
-				c = znajdz_numer_kolumny(this->wektor[i].tab[j].niewiadoma);
-
-				d = wektor[i].tab[j].wspolczynnik;
-				this->macierz[i][c] =  (double)d / 6.0;
-			}
-			
-			this->macierz[i][i] = 1;
-			this->macierz[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
-		}
-		
-	}
-
-	void wypelnienieGauss() {
-		double a, b;
-		int c, d;
-		for (int i = 0; i < wektor.size(); i++) {
-			for (int j = 0; j < wektor[i].tab.size(); j++) {
-				//c = wektor[i].tab[j].Niewiadoma->numer;
-				c = znajdz_numer_kolumny(this->wektor[i].tab[j].niewiadoma);
-				d = -wektor[i].tab[j].wspolczynnik;
-				this->macierz[i][c] = (double)d / 6.0;
-
-			}
-
-			this->macierz[i][i] = 1;
-			this->macierz[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
-		}
-
-	}
-
 	void wypisz_macierz() {
 		for (int j = 0; j < rozmiar_macierzy; j++) {
 			cout << j << ": ";
@@ -183,8 +147,6 @@ public:
 			}
 		}
 
-		//wypisz_macierz();
-
 		double s = 0;
 		//obliczanie
 		int n = wektor.size() - 1;
@@ -204,29 +166,7 @@ public:
 
 	void iteracyjne() {
 
-		double c;
-		for (int obieg = 0; obieg < 5; obieg++) {
-
-			for (int i = 0; i < rozmiar_macierzy; i++) {//dla ka¿dego wiersza
-				for (int j = 0; j < rozmiar_macierzy; j++) {
-					if (i != j) {
-						c = this->macierz[i][j] * wektor[j].wynik2;
-						wektor[i].wynik2 -= c;
-					}
-				}
-				wektor[i].wynik2 += this->macierz[i][rozmiar_macierzy]; // wyrazy wolne
-			}
-
-			for (int i = 0; i < wektor.size(); i ++)
-				cout << i << ": " << wektor[i].wynik2 << endl;
-		}
-
-		cout  << wektor[0].wynik2 << endl;
-	}
-
-	void iteracyjne2() {
-
-		int stop = 15;
+		int stop = 100;
 		bool koniec = true;
 		int n = wektor.size();
 		double eps = 0.000001;
@@ -236,8 +176,6 @@ public:
 		do
 		{
 			// przepisanie x - aktualnych wynikow do x2 - wynikow z poprzedniej iteracji
-		//	for (int i = 0; i < n; i++)
-				//x2[i] = x[i];
 				wektor2 = wektor;
 
 			// wykonanie kolejnej iteracji
@@ -247,9 +185,10 @@ public:
 
 				for (int j = 0; j < i; j++)
 					B2[i] -= (macierz[i][j] * wektor[j].wynik2);
-
+				
 				for (int j = i + 1; j < n; j++)
 					B2[i] -= macierz[i][j] * wektor2[j].wynik2;
+
 
 				wektor[i].wynik2 = B2[i] / macierz[i][i];
 			}
@@ -285,7 +224,7 @@ public:
 class MonteCarlo {
 public:
 	Plansza *plansza;
-	int ilosc_gier = 100000;
+	int ilosc_gier = 1000000;
 
 	MonteCarlo(Plansza *plansza) {
 		this->plansza = plansza;
@@ -358,7 +297,7 @@ public:
 class Zagadka {
 public:
 	Plansza plansza;
-	int pola = 6;
+	int pola;
 	map<int, int> polapki;
 	vector<Niewiadoma> wektor;
 
@@ -367,8 +306,8 @@ public:
 
 	Zagadka(Plansza plansza) {
 		this->plansza = plansza;
-		polapki = plansza.polapki;
-		//polapki. { { 4, -2 }, { 5, -2 } };
+		this->polapki = plansza.polapki;
+		this->pola = plansza.ilosc_pol;
 	}
 
 	bool znajdz(Niewiadoma *ruch) {
@@ -464,8 +403,7 @@ int main()
 	map<int, int> polapki = { { 1, -1 }, { 4, -1 }, { 6, -3 }, { 7, -2 }, { 13, -4 }, { 14, -5 }, { 17, -1 }, { 20, -2 }, { 21, -2 }, { 22, -10 }, { 24, -14 }, { 25, -2 }, { 27, -8 } };
 	//int pola = 27;
 	//map<int, int> polapki = { { 4, -2 }, { 5, -2 }, { 7, -5 }, { 9, -3 }, { 14, -12 }, { 15, -2 }, { 17, -7 }, { 19, -8 }, { 21, -3 }, { 22, -16 }, { 25, -9 } };
-
-	///int pola = 6;
+	//int pola = 6;
 	//map<int, int> polapki = { { 4, -2 }, { 5, -2 } };
 
 	Plansza *plansza = new Plansza(pola, polapki);
@@ -475,104 +413,14 @@ int main()
 
 	Macierz *m = new Macierz(wektor_rownan);
 	cout << "Wynik algorytmem Gaussa: ";
-	m->iteracyjne2();
+	m->gauss();
 
 	Macierz *ma = new Macierz(wektor_rownan);
 	cout << "Wynik algorytmem iteracyjnym Gaussa-Seidela: ";
-	ma->gauss();
-
+	ma->iteracyjne();
 
 	MonteCarlo *gra = new MonteCarlo(plansza);
 	cout << "Wynik Monte Carlo: " << gra->wynik() << endl;
 
 	return 0;
 }
-
-
-/*
-
-
-bool znajdz(Niewiadoma *ruch) {
-Niewiadoma *findy = new Niewiadoma();
-//if (find(wektor.begin(), wektor.end(), *ruch) != wektor.end()) {
-for (int is = 0; is < wektor.size(); is++) {
-*findy = wektor[is];
-if (findy->gracz != ruch->gracz || findy->gracz1Pozycja != ruch->gracz1Pozycja || findy->gracz2Pozycja != ruch->gracz2Pozycja)
-continue;
-else {
-return true;
-break;
-}
-}
-
-return false;
-}
-
-vector<Niewiadoma> wektor;
-vector<Niewiadoma> wektor2;
-
-queue<Niewiadoma> kolejka;
-
-int ktorynumer = 0;
-int ktorygracz, mozliwapulapka;
-
-Niewiadoma *pierwszy = new Niewiadoma(0, 0, 1);
-kolejka.push(*pierwszy);
-wektor.push_back(*pierwszy);
-
-Niewiadoma analizowany;
-Niewiadoma *ruch;
-
-while (!kolejka.empty())
-{
-analizowany = kolejka.front();
-kolejka.pop();
-
-analizowany.numer = ktorynumer; // numeruje zmienne
-ktorynumer++;
-
-ktorygracz = analizowany.gracz % 2 + 1; //modulo 2 + 1 daje przeciwnego gracza
-mozliwapulapka = (ktorygracz == 2) ? analizowany.gracz1Pozycja : analizowany.gracz2Pozycja;
-
-for (int i = 1; i <= 6; i++) {
-if (analizowany.gracz1Pozycja + i *  ((int)ktorygracz / 2) < pola && analizowany.gracz2Pozycja + i *abs(ktorygracz - 2) < pola) {
-
-if (polapki.find(mozliwapulapka + i) != polapki.end()) { //nie znlezioon
-ruch = new Niewiadoma(analizowany.gracz1Pozycja + (i + polapki[mozliwapulapka + i]) *((int)ktorygracz / 2), analizowany.gracz2Pozycja + (i + polapki[mozliwapulapka + i]) * abs(ktorygracz - 2), ktorygracz); //koment
-}
-else { // znaleziono
-ruch = new Niewiadoma(analizowany.gracz1Pozycja + i *  ((int)ktorygracz / 2), analizowany.gracz2Pozycja + i *abs(ktorygracz - 2), ktorygracz);
-}
-
-analizowany.wstaw(ruch);
-
-if (znajdz(ruch) == false) {
-wektor.push_back(*ruch);
-kolejka.push(*ruch);
-}
-
-} else { // dodaje pewne zwyciêstwo
-if (analizowany.gracz == 1)
-analizowany.pewne += 1;
-}
-
-}
-
-wektor2.push_back(analizowany);
-
-
-}
-
-cout << wektor2.size()<< endl;
-for (int iter = 0; iter < wektor2.size(); iter++) {
-cout << iter << ":" << wektor2[iter].gracz1Pozycja << wektor2[iter].gracz2Pozycja << wektor2[iter].gracz << " : ";
-for (int iter2 = 0; iter2 < wektor2[iter].tab.size(); iter2++) {
-cout << wektor2[iter].tab[iter2].wspolczynnik << " " << wektor2[iter].tab[iter2].niewiadoma->gracz1Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz2Pozycja << wektor2[iter].tab[iter2].niewiadoma->gracz <<  " , ";
-}
-
-cout << " " << wektor2[iter].pewne << endl;
-}
-
-
-*/
-
