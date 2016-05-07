@@ -55,7 +55,7 @@ public:
 	Macierz(vector<Niewiadoma> wektor){
 		this->wektor_niewiadomych = wektor;
 		this->rozmiar_macierzy = wektor.size();
-
+		//tworzenie tablicy dwuwymiarowej
 		macierz_wspolczynnikow = new double*[rozmiar_macierzy];
 		for (int i = 0; i < rozmiar_macierzy; i++)
 			macierz_wspolczynnikow[i] = new double[rozmiar_macierzy]; //+1 na macierz wyrazów wolnych
@@ -66,11 +66,11 @@ public:
 			}
 		}
 
-		double d;
+		//wype³nianie macierzy wspó³czynnikami		
 		for (int i = 0; i < wektor.size(); i++) {
-			for (int j = 0; j < wektor[i].tab.size(); j++) {				
-				d = -wektor[i].tab[j].wspolczynnik; // w iteracyjnym jest bez minusa, ale dzielenie przez wpó³czynik zmienia na dobry wynik
-				this->macierz_wspolczynnikow[i][znajdz_numer_kolumny(&this->wektor_niewiadomych[i].tab[j])] = d / 6.0;
+			for (int j = 0; j < wektor[i].tab.size(); j++) {	
+				//dla ka¿dej niewiadomej, która jest w równaniu do wyliczenia danej niewiadmoej, dzielimy wspó³czynnik przez -6 (bo zmieniamy stronê) i wpisujemy wpó³czynnik na odpowiedni¹ pozycjê
+				this->macierz_wspolczynnikow[i][znajdz_numer_kolumny(&this->wektor_niewiadomych[i].tab[j])] = -wektor[i].tab[j].wspolczynnik / 6.0; // w iteracyjnym jest bez minusa, ale dzielenie przez wpó³czynik zmienia na dobry wynik
 			}
 			this->macierz_wspolczynnikow[i][i] = 1;
 			this->macierz_wspolczynnikow[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
@@ -134,8 +134,7 @@ public:
 
 		bool koniec = true;		
 		vector<Niewiadoma> wektor2;
-		double *B2 = new double[rozmiar_macierzy];
-
+		double a;
 		do
 		{
 			// przepisanie x - aktualnych wynikow do x2 - wynikow z poprzedniej iteracji
@@ -144,16 +143,16 @@ public:
 			// wykonanie kolejnej iteracji
 			for (int i = 0; i < rozmiar_macierzy; i++)
 			{
-				B2[i] = macierz_wspolczynnikow[i][rozmiar_macierzy];//wyraz wolny
+				a = macierz_wspolczynnikow[i][rozmiar_macierzy];//wyraz wolny
 
 				for (int j = 0; j < i; j++)
-					B2[i] -= macierz_wspolczynnikow[i][j] * wektor_niewiadomych[j].wynik_iteracyjne;
+					a -= macierz_wspolczynnikow[i][j] * wektor_niewiadomych[j].wynik_iteracyjne;
 
 				for (int j = i + 1; j < rozmiar_macierzy; j++)
-					B2[i] -= macierz_wspolczynnikow[i][j] * wektor2[j].wynik_iteracyjne;
+					a -= macierz_wspolczynnikow[i][j] * wektor2[j].wynik_iteracyjne;
 
 
-				wektor_niewiadomych[i].wynik_iteracyjne = B2[i] / macierz_wspolczynnikow[i][i];
+				wektor_niewiadomych[i].wynik_iteracyjne = a / macierz_wspolczynnikow[i][i];
 			}
 
 			// sprawdzenie warunku zakonczenia: ||x(k)-x(k-1)|| <= epsilon
