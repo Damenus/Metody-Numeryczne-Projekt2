@@ -5,7 +5,6 @@
 #include <ctime>
 #include <cstdlib>
 
-
 using namespace std;
 
 class Niewiadoma;
@@ -34,6 +33,7 @@ public:
 	int numer = 0;
 	double wynik = 1.0;
 	double wynik2 = 0.0;
+	double wspolczynnik = 1.0;
 
 	Niewiadoma() {}
 
@@ -72,6 +72,7 @@ public:
 	Macierz(vector<Niewiadoma> wektor){
 		this->wektor = wektor;
 		this->rozmiar_macierzy = wektor.size();
+
 		macierz = new double*[rozmiar_macierzy];
 		for (int i = 0; i < rozmiar_macierzy; i++)
 			macierz[i] = new double[rozmiar_macierzy]; //+1 na macierz wyrazów wolnych
@@ -205,33 +206,36 @@ public:
 };
 
 class MonteCarlo {
-public:
+
 	Plansza *plansza;
-	int ilosc_gier = 1000000;
+	int ilosc_gier;
 
-	MonteCarlo(Plansza *plansza) {
+public:
+	MonteCarlo(Plansza *plansza, int ilosc = 1000000) {
 		this->plansza = plansza;
+		this->ilosc_gier = ilosc;
 		srand(time(NULL));
-	}
-
-	int rzutKoscia() {
-		return ((rand() % 6) + 1);
 	}
 
 	double wynik() {
 
 		double tablica_wygranych[2] = { 0, 0 };
 
-		for (int przebieg = 0; przebieg < this->ilosc_gier; przebieg++) {
+		for (int przebieg = 0; przebieg < this->ilosc_gier; przebieg++) { //gramy w grê, i zzliczamy ile razy kto wygra³
 			tablica_wygranych[gra()]++;
 		}
 
-		return tablica_wygranych[0] / (double)this->ilosc_gier;
+		return tablica_wygranych[0] / (double)this->ilosc_gier; //zwracamy procent wygranych gier przez pierwszego gracza
 
 	}
+private:
 
-	int gra() {
-		//pozycja na planszy graczy
+	int rzutKoscia() {
+		return ((rand() % 6) + 1);
+	}
+
+	int gra() { //gra zwaraca 0 lub 1 w zale¿noœci który gracz wygra³
+		
 		int gracz1 = 0;
 		int gracz2 = 0;
 		int czyja_tura = 1;
@@ -317,7 +321,7 @@ public:
 		vector<Niewiadoma> wektor2;
 		queue<Niewiadoma> kolejka;
 
-		ruch = new Niewiadoma(0, 0, 1);
+		ruch = new Niewiadoma(0, 0, 1); //pierwszy ruch w grze, ruch gracza 1
 
 		kolejka.push(*ruch);
 		wektor.push_back(*ruch);
@@ -403,7 +407,7 @@ int main()
 	cout << "Wynik algorytmem iteracyjnym Gaussa-Seidela: ";
 	ma->iteracyjne();
 
-	MonteCarlo *gra = new MonteCarlo(plansza);
+	MonteCarlo *gra = new MonteCarlo(plansza, 100);
 	cout << "Wynik Monte Carlo: " << gra->wynik() << endl;
 
 	return 0;
