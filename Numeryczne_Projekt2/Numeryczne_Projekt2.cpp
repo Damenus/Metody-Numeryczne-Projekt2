@@ -7,33 +7,16 @@
 
 using namespace std;
 
-class Niewiadoma;
-class Wyraz;
-
-class Wyraz{
-public:
-	double wspolczynnik;
-	Niewiadoma *niewiadoma;
-
-	Wyraz() {}
-
-	Wyraz(double a, Niewiadoma *b) {
-		wspolczynnik = a;
-		niewiadoma = b;
-	}
-};
-
 class Niewiadoma
 {
-	//(pole gdzie gracz1, pole gdzie gracz2, który gracz ma Niewiadoma) 
 public:
+	//(pole gdzie gracz1, pole gdzie gracz2, który gracz ma Niewiadoma) 
 	int gracz1Pozycja, gracz2Pozycja, gracz;
-	vector<Wyraz> tab;
-	int pewne = 0;
-	int numer = 0;
-	double wynik = 1.0;
-	double wynik2 = 0.0;
-	double wspolczynnik = 1.0;
+	vector<Niewiadoma> tab;
+	int pewne = 0;						//
+	double wynik_gauss = 1.0;			//zmienna wynik dla algorytmy gaussa
+	double wynik_iteracyjne = 0.0;		//zmienna wynik dla algorytmy iteracyjnego
+	double wspolczynnik = 1.0;			//wspó³czynik stoj¹cy przy niewiadomej
 
 	Niewiadoma() {}
 
@@ -45,9 +28,9 @@ public:
 
 	bool wstaw(Niewiadoma *ruch) {
 		Niewiadoma *findy = new Niewiadoma();
-		//if (find(wektor.begin(), wektor.end(), *ruch) != wektor.end()) {
+		//if (find(wektor.begin(), wektor.end(), *ruch) != wektor.end()) 
 		for (int is = 0; is < tab.size(); is++) {
-			findy = tab[is].niewiadoma;
+			findy = &tab[is];
 			if (findy->gracz != ruch->gracz || findy->gracz1Pozycja != ruch->gracz1Pozycja || findy->gracz2Pozycja != ruch->gracz2Pozycja)
 				continue;
 			else {
@@ -56,8 +39,8 @@ public:
 				break;
 			}
 		}
-		Wyraz *r = new Wyraz(1, ruch);
-		tab.push_back(*r);
+		
+		tab.push_back(*ruch);
 		return false;
 	}
 
@@ -87,7 +70,7 @@ public:
 		for (int i = 0; i < wektor.size(); i++) {
 			for (int j = 0; j < wektor[i].tab.size(); j++) {				
 				d = -wektor[i].tab[j].wspolczynnik; // w iteracyjnym jest bez minusa, ale dzielenie przez wpó³czynik zmienia na dobry wynik
-				this->macierz[i][znajdz_numer_kolumny(this->wektor[i].tab[j].niewiadoma)] = d / 6.0;
+				this->macierz[i][znajdz_numer_kolumny(&this->wektor[i].tab[j])] = d / 6.0;
 			}
 			this->macierz[i][i] = 1;
 			this->macierz[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
@@ -124,8 +107,7 @@ public:
 		//eliminacja
 		double m;
 		for (int i = 0; i < this->rozmiar_macierzy; i++) { // ka¿da kolumna pokolei
-
-			for (int j = i + 1; j < this->rozmiar_macierzy; j++) {
+			for (int j = i + 1; j < this->rozmiar_macierzy; j++) { //tylko dolny trójk¹t
 				m = macierz[j][i] / macierz[i][i]; //wspo³czynnik mno¿enia pierwszego weirsza, by odj¹æ od kolejnych kolumn, by wyzerowaæ dolny trójk¹t
 				for (int k = i; k < this->rozmiar_macierzy + 1; k++) { // zerowanie kolumny
 					macierz[j][k] = macierz[j][k] - m * macierz[i][k];
@@ -133,20 +115,20 @@ public:
 			}
 		}
 
-		double s;
+		
 		//obliczanie
-		int n = rozmiar_macierzy - 1;
-		wektor[n].wynik = macierz[n][rozmiar_macierzy] / macierz[n][n];
+		double s;
+		wektor[rozmiar_macierzy - 1].wynik_gauss = macierz[rozmiar_macierzy - 1][rozmiar_macierzy] / macierz[rozmiar_macierzy - 1][rozmiar_macierzy - 1]; //obliczanie 
 
-		for (int i = n - 1; i >= 0; i--){
+		for (int i = rozmiar_macierzy - 2; i >= 0; i--){
 			s = 0;
 			for (int k = i + 1; k < rozmiar_macierzy; k++) {
-				s = s + macierz[i][k] * wektor[k].wynik;
-				wektor[i].wynik = (macierz[i][rozmiar_macierzy] - s) / macierz[i][i];
+				s = s + macierz[i][k] * wektor[k].wynik_gauss;
+				wektor[i].wynik_gauss = (macierz[i][rozmiar_macierzy] - s) / macierz[i][i];
 			}
 		}
 
-		cout << wektor[0].wynik << endl;
+		cout << wektor[0].wynik_gauss << endl;
 
 	}
 
@@ -169,26 +151,26 @@ public:
 				B2[i] = macierz[i][rozmiar_macierzy];//wyraz wolny
 
 				for (int j = 0; j < i; j++)
-					B2[i] -= (macierz[i][j] * wektor[j].wynik2);
+					B2[i] -= (macierz[i][j] * wektor[j].wynik_iteracyjne);
 
 				for (int j = i + 1; j < rozmiar_macierzy; j++)
-					B2[i] -= macierz[i][j] * wektor2[j].wynik2;
+					B2[i] -= macierz[i][j] * wektor2[j].wynik_iteracyjne;
 
 
-				wektor[i].wynik2 = B2[i] / macierz[i][i];
+				wektor[i].wynik_iteracyjne = B2[i] / macierz[i][i];
 			}
 
 			// sprawdzenie warunku zakonczenia: ||x(k)-x(k-1)|| <= epsilon
 			for (int i = 0; i < rozmiar_macierzy; i++)
 			{
-				if (fabs(wektor[i].wynik2 - wektor2[i].wynik2) > eps) { koniec = true; break; }
+				if (fabs(wektor[i].wynik_iteracyjne - wektor2[i].wynik_iteracyjne) > eps) { koniec = true; break; }
 				else koniec = false;
 			}
 			stop--;
 		} while (koniec && stop > 0);
 
 
-		cout << wektor[0].wynik2 << " dla " << 1000 - stop << " ilosci obiegow i epsilona: " << eps << endl;
+		cout << wektor[0].wynik_iteracyjne << " dla " << 1000 - stop << " ilosci obiegow i epsilona: " << eps << endl;
 	}
 };
 
@@ -314,9 +296,8 @@ public:
 	}
 
 	vector<Niewiadoma> analiza() {
-		int ktorygracz, mozliwapulapka, ktorynumer = 0;
+		int ktorygracz, mozliwapulapka;
 		Niewiadoma analizowany, *ruch;
-
 
 		vector<Niewiadoma> wektor2;
 		queue<Niewiadoma> kolejka;
@@ -330,9 +311,6 @@ public:
 		{
 			analizowany = kolejka.front();
 			kolejka.pop();
-
-			analizowany.numer = ktorynumer; // numeruje zmienne
-			ktorynumer++;
 
 			ktorygracz = analizowany.gracz % 2 + 1; //modulo 2 + 1 daje przeciwnego gracza
 			mozliwapulapka = (ktorygracz == 2) ? analizowany.gracz1Pozycja : analizowany.gracz2Pozycja;
@@ -376,7 +354,7 @@ public:
 		for (int iter = 0; iter < wektor.size(); iter++) {
 			cout << iter << ":" << wektor[iter].gracz1Pozycja << wektor[iter].gracz2Pozycja << wektor[iter].gracz << " : ";
 			for (int iter2 = 0; iter2 < wektor[iter].tab.size(); iter2++) {
-				cout << wektor[iter].tab[iter2].wspolczynnik << " " << wektor[iter].tab[iter2].niewiadoma->gracz1Pozycja << wektor[iter].tab[iter2].niewiadoma->gracz2Pozycja << wektor[iter].tab[iter2].niewiadoma->gracz << " , ";
+				cout << wektor[iter].tab[iter2].wspolczynnik << " " << wektor[iter].tab[iter2].gracz1Pozycja << wektor[iter].tab[iter2].gracz2Pozycja << wektor[iter].tab[iter2].gracz << " , ";
 			}
 			cout << " " << wektor[iter].pewne << endl;
 		}
