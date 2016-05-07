@@ -48,21 +48,21 @@ public:
 
 class Macierz {
 public:
-	double **macierz;
-	vector<Niewiadoma> wektor;
+	double **macierz_wspolczynnikow;
+	vector<Niewiadoma> wektor_niewiadomych;
 	int rozmiar_macierzy;
 
 	Macierz(vector<Niewiadoma> wektor){
-		this->wektor = wektor;
+		this->wektor_niewiadomych = wektor;
 		this->rozmiar_macierzy = wektor.size();
 
-		macierz = new double*[rozmiar_macierzy];
+		macierz_wspolczynnikow = new double*[rozmiar_macierzy];
 		for (int i = 0; i < rozmiar_macierzy; i++)
-			macierz[i] = new double[rozmiar_macierzy]; //+1 na macierz wyrazów wolnych
+			macierz_wspolczynnikow[i] = new double[rozmiar_macierzy]; //+1 na macierz wyrazów wolnych
 
 		for (int j = 0; j < rozmiar_macierzy; j++) {
 			for (int k = 0; k < rozmiar_macierzy; k++){
-				macierz[j][k] = 0;
+				macierz_wspolczynnikow[j][k] = 0;
 			}
 		}
 
@@ -70,18 +70,18 @@ public:
 		for (int i = 0; i < wektor.size(); i++) {
 			for (int j = 0; j < wektor[i].tab.size(); j++) {				
 				d = -wektor[i].tab[j].wspolczynnik; // w iteracyjnym jest bez minusa, ale dzielenie przez wpó³czynik zmienia na dobry wynik
-				this->macierz[i][znajdz_numer_kolumny(&this->wektor[i].tab[j])] = d / 6.0;
+				this->macierz_wspolczynnikow[i][znajdz_numer_kolumny(&this->wektor_niewiadomych[i].tab[j])] = d / 6.0;
 			}
-			this->macierz[i][i] = 1;
-			this->macierz[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
+			this->macierz_wspolczynnikow[i][i] = 1;
+			this->macierz_wspolczynnikow[i][wektor.size()] = (double)wektor[i].pewne / 6.0;
 		}
 
 	}
 
 	int znajdz_numer_kolumny(Niewiadoma *szukany) {
 		Niewiadoma *findy = new Niewiadoma();
-		for (int is = 0; is < wektor.size(); is++) {
-			*findy = wektor[is];
+		for (int is = 0; is < wektor_niewiadomych.size(); is++) {
+			*findy = wektor_niewiadomych[is];
 			if (findy->gracz != szukany->gracz || findy->gracz1Pozycja != szukany->gracz1Pozycja || findy->gracz2Pozycja != szukany->gracz2Pozycja)
 				continue;
 			else {
@@ -96,81 +96,77 @@ public:
 		for (int j = 0; j < rozmiar_macierzy; j++) {
 			cout << j << ": ";
 			for (int k = 0; k <= rozmiar_macierzy; k++){
-				cout << macierz[j][k] << " ";
+				cout << macierz_wspolczynnikow[j][k] << " ";
 			}
 			cout << endl;
 		}
 	}
 
-	void gauss() {
+	double gauss() {
 
 		//eliminacja
 		double m;
 		for (int i = 0; i < this->rozmiar_macierzy; i++) { // ka¿da kolumna pokolei
 			for (int j = i + 1; j < this->rozmiar_macierzy; j++) { //tylko dolny trójk¹t
-				m = macierz[j][i] / macierz[i][i]; //wspo³czynnik mno¿enia pierwszego weirsza, by odj¹æ od kolejnych kolumn, by wyzerowaæ dolny trójk¹t
+				m = macierz_wspolczynnikow[j][i] / macierz_wspolczynnikow[i][i]; //wspo³czynnik mno¿enia pierwszego wiersza, by odj¹æ od kolejnych kolumn, by wyzerowaæ dolny trójk¹t
 				for (int k = i; k < this->rozmiar_macierzy + 1; k++) { // zerowanie kolumny
-					macierz[j][k] = macierz[j][k] - m * macierz[i][k];
+					macierz_wspolczynnikow[j][k] = macierz_wspolczynnikow[j][k] - m * macierz_wspolczynnikow[i][k];
 				}
 			}
 		}
-
 		
 		//obliczanie
 		double s;
-		wektor[rozmiar_macierzy - 1].wynik_gauss = macierz[rozmiar_macierzy - 1][rozmiar_macierzy] / macierz[rozmiar_macierzy - 1][rozmiar_macierzy - 1]; //obliczanie 
+		wektor_niewiadomych[rozmiar_macierzy - 1].wynik_gauss = macierz_wspolczynnikow[rozmiar_macierzy - 1][rozmiar_macierzy] / macierz_wspolczynnikow[rozmiar_macierzy - 1][rozmiar_macierzy - 1]; //obliczanie zaczynamy od ostatniej niewiadomej, poniewa¿ wyzerowaliœmy dlon¹ trójk¹t macierzy i zosta³ jednie wyraz wolny, wiêc by wyliczyæ wartoœæ niewiadmowej, wystarczy podzieliæ ten wyraz przez wppó³czynnik przy niewiadomej
 
-		for (int i = rozmiar_macierzy - 2; i >= 0; i--){
+		for (int i = rozmiar_macierzy - 2; i >= 0; i--){ // wyznaczamy niewiadome od koñca, -1 bo indeksujemy macierz od 0, -1 bo ostatni¹ niewiadm¹ ju¿ wyliczyliœmy
 			s = 0;
 			for (int k = i + 1; k < rozmiar_macierzy; k++) {
-				s = s + macierz[i][k] * wektor[k].wynik_gauss;
-				wektor[i].wynik_gauss = (macierz[i][rozmiar_macierzy] - s) / macierz[i][i];
+				s = s + macierz_wspolczynnikow[i][k] * wektor_niewiadomych[k].wynik_gauss; //sumujemy iloczyny wczeœniej wyliczonych niewiadomych z wspó³czynnikami				
 			}
+			wektor_niewiadomych[i].wynik_gauss = (macierz_wspolczynnikow[i][rozmiar_macierzy] - s) / macierz_wspolczynnikow[i][i]; //od wyrazu wolnego odejmujemy policzon¹ sumê i dzielimy przez wpó³czynnik przy niewiadomej
 		}
 
-		cout << wektor[0].wynik_gauss << endl;
-
+		return wektor_niewiadomych[0].wynik_gauss;
 	}
 
-	void iteracyjne() {
+	void iteracyjne(int stop = 1000, double eps = 0.000001) {
 
-		int stop = 1000;
-		bool koniec = true;
-		double eps = 0.000001;
+		bool koniec = true;		
 		vector<Niewiadoma> wektor2;
 		double *B2 = new double[rozmiar_macierzy];
 
 		do
 		{
 			// przepisanie x - aktualnych wynikow do x2 - wynikow z poprzedniej iteracji
-			wektor2 = wektor;
+			wektor2 = wektor_niewiadomych;
 
 			// wykonanie kolejnej iteracji
 			for (int i = 0; i < rozmiar_macierzy; i++)
 			{
-				B2[i] = macierz[i][rozmiar_macierzy];//wyraz wolny
+				B2[i] = macierz_wspolczynnikow[i][rozmiar_macierzy];//wyraz wolny
 
 				for (int j = 0; j < i; j++)
-					B2[i] -= (macierz[i][j] * wektor[j].wynik_iteracyjne);
+					B2[i] -= macierz_wspolczynnikow[i][j] * wektor_niewiadomych[j].wynik_iteracyjne;
 
 				for (int j = i + 1; j < rozmiar_macierzy; j++)
-					B2[i] -= macierz[i][j] * wektor2[j].wynik_iteracyjne;
+					B2[i] -= macierz_wspolczynnikow[i][j] * wektor2[j].wynik_iteracyjne;
 
 
-				wektor[i].wynik_iteracyjne = B2[i] / macierz[i][i];
+				wektor_niewiadomych[i].wynik_iteracyjne = B2[i] / macierz_wspolczynnikow[i][i];
 			}
 
 			// sprawdzenie warunku zakonczenia: ||x(k)-x(k-1)|| <= epsilon
 			for (int i = 0; i < rozmiar_macierzy; i++)
 			{
-				if (fabs(wektor[i].wynik_iteracyjne - wektor2[i].wynik_iteracyjne) > eps) { koniec = true; break; }
+				if (fabs(wektor_niewiadomych[i].wynik_iteracyjne - wektor2[i].wynik_iteracyjne) > eps) { koniec = true; break; }
 				else koniec = false;
 			}
 			stop--;
 		} while (koniec && stop > 0);
 
 
-		cout << wektor[0].wynik_iteracyjne << " dla " << 1000 - stop << " ilosci obiegow i epsilona: " << eps << endl;
+		cout << wektor_niewiadomych[0].wynik_iteracyjne << " dla " << 1000 - stop << " ilosci obiegow i epsilona: " << eps << endl;
 	}
 };
 
@@ -379,7 +375,7 @@ int main()
 
 	Macierz *m = new Macierz(wektor_rownan);
 	cout << "Wynik algorytmem Gaussa: ";
-	m->gauss();
+	cout << m->gauss() << endl;
 
 	Macierz *ma = new Macierz(wektor_rownan);
 	cout << "Wynik algorytmem iteracyjnym Gaussa-Seidela: ";
