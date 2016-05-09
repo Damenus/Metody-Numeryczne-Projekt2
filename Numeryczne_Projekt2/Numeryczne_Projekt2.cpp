@@ -10,10 +10,12 @@ using namespace std;
 class Niewiadoma
 {
 public:
-	//(pole gdzie gracz1, pole gdzie gracz2, który gracz ma Niewiadoma) 
+		//(pole gdzie gracz1, pole gdzie gracz2, który gracz ma Niewiadoma) 
 	int gracz1Pozycja, gracz2Pozycja, gracz;
-	vector<Niewiadoma> tab;
-	int pewne = 0;						//
+		//zmienne bêd¹ce równaniem do wyznaczenia równania	
+	vector<Niewiadoma> tab;				//tablica niewiadmych mozliwych po wy¿uceniu kostk¹
+	int pewne = 0;						//wartoœæ pewnej wygranej po rzuceniu kostk¹ * 6
+		//zmienne u¿ywane do oliczenia uk³adu równañ
 	double wynik_gauss = 1.0;			//zmienna wynik dla algorytmy gaussa
 	double wynik_iteracyjne = 0.0;		//zmienna wynik dla algorytmy iteracyjnego
 	double wspolczynnik = 1.0;			//wspó³czynik stoj¹cy przy niewiadomej
